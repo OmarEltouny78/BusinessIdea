@@ -12,11 +12,15 @@ import mplsoccer
 
 import streamlit as st
 
+from highlight_text import fig_text
+
+import pickle
+
 df=pd.read_csv('SalahMoshen.csv')
 
 df1=pd.read_csv('SalahMohsenPart1.csv')
 
-df_final=pd.concat([df,df1])
+df_final=pd.read_csv('eventsMohsenNew - eventsMohsen.csv')
 
 df_final.rename(columns = {'X':'x', 'Y':'y'}, inplace = True)
 
@@ -40,7 +44,7 @@ df_final['Goal']=0
 
 df_final.at[2,'Goal']=1
 
-import pickle
+
 
 loaded_model = pickle.load(open('finalized_model.sav', 'rb'))
 
@@ -50,15 +54,59 @@ y=df_final[['Goal']]
 
 df_final['xG']=loaded_model.predict_proba(X)[:,1]
 
-#plot pitch
-pitch = mplsoccer.VerticalPitch(line_color='black', half = True, pitch_type='custom', pitch_length=105, pitch_width=68, line_zorder = 2)
+colors = {'Goal':'green', 'Miss':'tomato', 'Blocked':'lightblue', 'Save':'gray', 'Post':'gold'}
+
+pitch = mplsoccer.VerticalPitch(line_color='black', half = True, pitch_type='custom', pitch_length=100, pitch_width=100, line_zorder = 3)
 fig, ax = pitch.grid(grid_height=0.9, title_height=0.06, axis=False,
                      endnote_height=0.04, title_space=0, endnote_space=0)
-#make heatmap
-pcm = pitch.scatter(df_final['x'],df_final['y'],ax=ax['pitch'],s=(df_final['xG']*900)+100,marker='h',c='#b94b75', edgecolors='#383838')
+pcm = pitch.scatter(df_final['x'],df_final['y'],ax=ax['pitch'],s=(df_final['xG']*1500)+150,marker='o',c=df_final['Result'].map(colors), edgecolors='#383838')
+# Scatter plot for goals, blocked shots, missed shots
 
-st.dataframe(X)
+fig_text(s=f'xG: 2.145',
+        x=.15, y =.15, fontsize=30,fontfamily='Andale Mono',color='black')
+fig_text(s=f'Goals: 1',
+        x=.45, y =.15, fontsize=30,fontfamily='Andale Mono',color='black')
+fig_text(s=f'Shots: 15',
+        x=.75, y =.15, fontsize=30,fontfamily='Andale Mono',color='black')
+pcm = pitch.scatter(60,95,ax=ax['pitch'],marker='o',c='green', edgecolors='#383838',s=1200)
+fig_text(s=f'Goal',
+        x=.13, y =.275, fontsize=30,fontfamily='Andale Mono',color='black')
+pcm = pitch.scatter(60,76,ax=ax['pitch'],marker='o',c='gold', edgecolors='#383838',s=1200)
+fig_text(s=f'Post',
+        x=.30, y =.275, fontsize=30,fontfamily='Andale Mono',color='black')
+pcm = pitch.scatter(60,57,ax=ax['pitch'],marker='o',c='grey', edgecolors='#383838',s=1200)
+fig_text(s=f'Save',
+        x=.47, y =.275, fontsize=30,fontfamily='Andale Mono',color='black')
+pcm = pitch.scatter(60,38,ax=ax['pitch'],marker='o',c='lightblue', edgecolors='#383838',s=1200)
+fig_text(s=f'Blocked',
+        x=.63, y =.275, fontsize=30,fontfamily='Andale Mono',color='black')
+pcm = pitch.scatter(60,19,ax=ax['pitch'],marker='o',c='tomato', edgecolors='#383838',s=1200)
+fig_text(s=f'Miss',
+        x=.80, y =.275, fontsize=30,fontfamily='Andale Mono',color='black')
 
-st.pyplot(fig, caption='Enter any caption here')
+st.title('اهداف المتوقعة - صلاح محسن')
+
+st.header('البيانات المجمعة')
+
+st.dataframe(df_final)
+st.subheader('اهداف مسجلة : 1')
+st.subheader('الاهداف المتوفعة : 2.14')
+
+st.subheader('التسديدات : 15')
+
+st.header('خريطة التسديدات')
+
+st.pyplot(fig)
+
+st.subheader('هدف:اخضر')
+
+st.subheader('فرصة ضائعة: احمر')
+st.subheader('القائم: اصفر')
+
+st.subheader('تصدي الحارس:رمادي')
+st.subheader('تصدي من لاعب:لبني')
+
+
+st.header('تحليل الفيديو')
 
 st.video('Salah.mp4')
