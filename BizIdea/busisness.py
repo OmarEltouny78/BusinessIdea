@@ -45,7 +45,6 @@ for action in ['action', 'action1', 'action2']:
     df[key_start_distance] = df.apply(lambda s: distance.euclidean((s[key_start_x], s[key_start_y]), goal), axis=1)
 
 
-loaded_model = pickle.load(open('finalized_model.sav', 'rb'))
 
 df.rename(columns={'Goal':'action_result'},inplace=True)
 
