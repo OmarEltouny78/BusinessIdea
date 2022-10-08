@@ -19,7 +19,7 @@ import pickle
 from scipy.spatial import distance
 
 
-df=pd.read_csv('eventsMohsenNew - eventsMohsen (1).csv')
+df=pd.read_csv('https://raw.githubusercontent.com/OmarEltouny78/BusinessIdea/main/BizIdea/eventsMohsenNew%20-%20eventsMohsen%20(1).csv')
 
 df['action_start_x']=df.X/100
 df['action_start_y']=df.Y/100
@@ -59,7 +59,7 @@ X = df[columns_features]
 y = df[column_target]
 
 
-loaded_model = pickle.load(open('classifierxG (1).sav', 'rb'))
+loaded_model = pickle.load(open('https://github.com/OmarEltouny78/BusinessIdea/blob/main/BizIdea/classifierxG%20(1).sav', 'rb'))
 result = loaded_model.predict_proba(X)[:,1]
 df['xG']=result
 
