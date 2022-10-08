@@ -16,57 +16,66 @@ from highlight_text import fig_text
 
 import pickle
 
-df=pd.read_csv('SalahMoshen.csv')
+from scipy.spatial import distance
 
-df1=pd.read_csv('SalahMohsenPart1.csv')
 
-df_final=pd.read_csv('eventsMohsenNew - eventsMohsen.csv')
+df=pd.read_csv('eventsMohsenNew - eventsMohsen (1).csv')
 
-df_final.rename(columns = {'X':'x', 'Y':'y'}, inplace = True)
+df['action_start_x']=df.X/100
+df['action_start_y']=df.Y/100
+df['action1_start_x']=df.action1_start_x/100
+df['action2_start_x']=df.action2_start_x/100
+df['action1_start_y']=df.action1_start_y/100
+df['action2_start_y']=df.action2_start_y/100
 
-df_final["X"] = (100-df_final['x'])*1.05
+df['C']=abs(df['action_start_y']-50)*0.68
 
-df_final['Y']=df_final['y']*68/100
+df.rename(columns={'body_part':'action_body_part_id'},inplace=True)
 
-df_final['C']=abs(df_final['y']-50)*0.68
+df["Angle"] = np.where(np.arctan(7.32 * df["action_start_x"] / (df["action_start_x"]**2 + df['C']**2 - (7.32/2)**2)) > 0, np.arctan(7.32 * df["action_start_x"] /(df["action_start_x"]**2 + df['C']**2 - (7.32/2)**2)), np.arctan(7.32 * df["action_start_x"] /(df["action_start_x"]**2 + df['C']**2 - (7.32/2)**2)) + np.pi)
 
-df_final["Distance"] = np.sqrt(df_final["X"]**2 +df_final["C"]**2)
-df_final["Angle"] = np.where(np.arctan(7.32 * df_final["X"] / (df_final["X"]**2 + df_final["C"]**2 - (7.32/2)**2)) > 0, np.arctan(7.32 * df_final["X"] /(df_final["X"]**2 + df_final["C"]**2 - (7.32/2)**2)), np.arctan(7.32 * df_final["X"] /(df_final["X"]**2 + df_final["C"]**2 - (7.32/2)**2)) + np.pi)
+goal = (1, 0.5)
 
-#creating extra variables
-df_final["X2"] = df_final['X']**2
-df_final["C2"] = df_final['C']**2
-df_final["AX"]  = df_final['Angle']*df_final['X']
+# Loop over the three actions
+for action in ['action', 'action1', 'action2']:
+    key_start_x = '{action}_start_x'.format(action=action)
+    key_start_y = '{action}_start_y'.format(action=action)
+    key_start_distance = '{action}_start_distance'.format(action=action)
 
-df_final=df_final.reset_index()
-
-df_final['Goal']=0
-
-df_final.at[2,'Goal']=1
-
+    df[key_start_distance] = df.apply(lambda s: distance.euclidean((s[key_start_x], s[key_start_y]), goal), axis=1)
 
 
 loaded_model = pickle.load(open('finalized_model.sav', 'rb'))
 
-X=df_final[['X','Y','C','Distance','Angle','AX','X2','C2']]
+df.rename(columns={'Goal':'action_result'},inplace=True)
 
-y=df_final[['Goal']]
+# Features
+columns_features = ['action_start_x', 'action_start_y', 'action_body_part_id', 'action_start_distance','action1_start_distance', 'action2_start_distance','Angle','C']
 
-df_final['xG']=loaded_model.predict_proba(X)[:,1]
+# Label: 1 if a goal, 0 otherwise
+column_target = 'action_result'
+
+X = df[columns_features]
+y = df[column_target]
+
+
+loaded_model = pickle.load(open('classifierxG (1).sav', 'rb'))
+result = loaded_model.predict_proba(X)[:,1]
+df['xG']=result
 
 colors = {'Goal':'green', 'Miss':'tomato', 'Blocked':'lightblue', 'Save':'gray', 'Post':'gold'}
 
 pitch = mplsoccer.VerticalPitch(line_color='black', half = True, pitch_type='custom', pitch_length=100, pitch_width=100, line_zorder = 3)
 fig, ax = pitch.grid(grid_height=0.9, title_height=0.06, axis=False,
                      endnote_height=0.04, title_space=0, endnote_space=0)
-pcm = pitch.scatter(df_final['x'],df_final['y'],ax=ax['pitch'],s=(df_final['xG']*1500)+150,marker='o',c=df_final['Result'].map(colors), edgecolors='#383838')
+pcm = pitch.scatter(df['X'],df['Y'],ax=ax['pitch'],s=(df['xG']*1500)+150,marker='o',c=df['Result'].map(colors), edgecolors='#383838')
 # Scatter plot for goals, blocked shots, missed shots
 
-fig_text(s=f'xG: 2.145',
+fig_text(s=f'xG: ' + str(np.sum(result)),
         x=.15, y =.15, fontsize=30,fontfamily='Andale Mono',color='black')
 fig_text(s=f'Goals: 1',
         x=.45, y =.15, fontsize=30,fontfamily='Andale Mono',color='black')
-fig_text(s=f'Shots: 15',
+fig_text(s=f'Shots: '+str(len(df)),
         x=.75, y =.15, fontsize=30,fontfamily='Andale Mono',color='black')
 pcm = pitch.scatter(60,95,ax=ax['pitch'],marker='o',c='green', edgecolors='#383838',s=1200)
 fig_text(s=f'Goal',
@@ -84,11 +93,14 @@ pcm = pitch.scatter(60,19,ax=ax['pitch'],marker='o',c='tomato', edgecolors='#383
 fig_text(s=f'Miss',
         x=.80, y =.275, fontsize=30,fontfamily='Andale Mono',color='black')
 
+df_display=df[['Mins','Secs','Result','Against','xG']]
 st.title('اهداف المتوقعة - صلاح محسن')
+st.header('تحليل الفيديو')
 
+st.video('Salah.mp4')
 st.header('البيانات المجمعة')
 
-st.dataframe(df_final)
+st.dataframe(df_display)
 st.subheader('اهداف مسجلة : 1')
 st.subheader('الاهداف المتوفعة : 2.14')
 
@@ -107,6 +119,4 @@ st.subheader('تصدي الحارس:رمادي')
 st.subheader('تصدي من لاعب:لبني')
 
 
-st.header('تحليل الفيديو')
 
-st.video('Salah.mp4')
