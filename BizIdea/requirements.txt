@@ -1,0 +1,5 @@
+mplsoccer==1.1.7
+xgboost==1.6.2
+numpy==1.23.2
+pandas==1.5.0
+scipy==1.9.1
