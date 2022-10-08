@@ -58,7 +58,7 @@ X = df[columns_features]
 y = df[column_target]
 
 
-loaded_model = pickle.load(open('BizIdea/classifierxG.sav', 'rb'))
+loaded_model = pickle.load(open('BusinessIdea/BizIdea/classifierxG.sav', 'rb'))
 result = loaded_model.predict_proba(X)[:,1]
 df['xG']=result
 
